@@ -1,19 +1,17 @@
 import gtk 
 import webkit
+import os
 
 from settings import LOGIN, PASSWORD
 
-view = webkit.WebView() 
-sw = gtk.ScrolledWindow() 
-sw.add(view) 
+try:
+    from settings import CHRONOS_URL
+except ImportError:
+    CHRONOS_URL = "https://achille.proxistep.com/index.php?go=chronos_auth"
 
-win = gtk.Window(gtk.WINDOW_TOPLEVEL) 
-win.add(sw)
-win.set_default_size(600, 800)
-win.show_all()
-win.connect('destroy', gtk.main_quit)
-
-view.open("https://achille.proxistep.com/index.php?go=chronos_auth")
+def set_app_icon(win):
+    path_to_icon = os.path.abspath(os.path.dirname(__file__))
+    win.set_icon_from_file(os.path.join(path_to_icon, "icon.png"))
 
 def handle_console_message(view, message, line):
     print message
@@ -28,7 +26,6 @@ def on_chronos_page(view, frame):
                 });
             })
             '''
-    print 'Iam on chronos page'
     view.execute_script(js)
     view.disconnect(view.load_connect_id)
     view.connect('console-message', handle_console_message)
@@ -42,7 +39,21 @@ def on_html_get(view, frame):
     view.execute_script(js)
     view.load_connect_id = view.connect('load_finished', on_chronos_page)
     #
-view.connect('load-finished', on_html_get)
 
-gtk.main()
+if __name__ == '__main__':
+    view = webkit.WebView() 
+    sw = gtk.ScrolledWindow() 
+    sw.add(view) 
 
+    win = gtk.Window(gtk.WINDOW_TOPLEVEL) 
+    win.add(sw)
+    win.set_default_size(600, 800)
+    win.show_all()
+    win.connect('destroy', gtk.main_quit)
+
+    set_app_icon(win)
+
+    view.open(CHRONOS_URL)
+    view.connect('load-finished', on_html_get)
+    
+    gtk.main()

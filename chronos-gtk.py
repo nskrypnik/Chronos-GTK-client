@@ -16,27 +16,25 @@ def set_app_icon(win):
     path_to_icon = os.path.abspath(os.path.dirname(__file__))
     win.set_icon_from_file(os.path.join(path_to_icon, "icon.png"))
 
-def hovering_over_link(view, title, uri):
-    view.last_hovered_link = uri
+def _navigation_requested(view, frame, request, action, descision):
+    uri = request.get_uri()
+    webbrowser.open(uri)
+    return True
 
-def on_view_click(view, event):
-    if event.button == 1 and view.last_hovered_link:
-        webbrowser.open(view.last_hovered_link)
+def _console_message(view, msg, line, sid):
+    print msg
+    return True
 
 def on_chronos_page(view, frame):
     js = '''
-            $(function(){
-                    console.log('Hello world');
-                    $('a').click(function(){
-                    //console.log('Hello world!');
-                    alert('Hello');
-                });
-            })
+            console.info('Hello world');
+            console.log('Hello world!');
             '''
-    view.execute_script(js)
     view.disconnect(view.load_connect_id)
-    view.connect('hovering_over_link', hovering_over_link)
-    view.connect('button-press-event', on_view_click);
+    view.connect('navigation-policy-decision-requested', _navigation_requested)
+    view.connect('new-window-policy-decision-requested', _navigation_requested)
+    view.connect('console-message', _console_message)
+    view.execute_script(js)
 
 def on_html_get(view, frame):
     js = '''
@@ -46,7 +44,6 @@ def on_html_get(view, frame):
     ''' % (LOGIN, PASSWORD)
     view.execute_script(js)
     view.load_connect_id = view.connect('load_finished', on_chronos_page)
-    #
 
 if __name__ == '__main__':
     view = webkit.WebView() 
@@ -63,5 +60,4 @@ if __name__ == '__main__':
 
     view.open(CHRONOS_URL)
     view.connect('load-finished', on_html_get)
-    
     gtk.main()
